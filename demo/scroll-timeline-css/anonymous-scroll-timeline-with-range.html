@@ -12,7 +12,8 @@
     background-color: green;
     animation: move linear both;
     animation-timeline: scroll(y nearest);
-    animation-range: 100px 500px;
+    --max: 500px;
+    animation-range: 100px var(--max);
   }
 
   .spacer {
