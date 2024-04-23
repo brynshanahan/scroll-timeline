@@ -1002,6 +1002,7 @@ function getNormalEndRange(timeline) {
 const expressionCalls = ["var", "calc", "min", "max", "clamp", "minmax"];
 
 function parseAnimationRange(target, timeline, value) {
+  console.log({ target, timeline, value });
   if (!value)
     return {
       start: "normal",
@@ -1055,11 +1056,14 @@ function parseAnimationRange(target, timeline, value) {
     return animationRange;
   }
 
+  console.log("huh");
+
   if (timeline instanceof ScrollTimeline) {
     // @TODO: Play nice with only 1 offset being set
     // @TODO: Play nice with expressions such as `calc(50% + 10px) 100%`
 
     let computedValue = value;
+    console.log({ computedValue });
 
     if (expressionCalls.some((fn) => value.includes(fn))) {
       const key = `--compute-scroll-timeline-animation-range-${Math.random()

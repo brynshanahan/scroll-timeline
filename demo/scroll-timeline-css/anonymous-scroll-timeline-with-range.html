@@ -12,9 +12,12 @@
     width: 100px;
     height: 100px;
     background-color: green;
-    animation: move linear both;
+    --max: calc(500px - 1vw);
+    /* animation: move linear both; */
+    animation-name: move;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: scroll(y nearest);
-    --max: 500px;
     animation-range: 100px var(--max);
   }
 
