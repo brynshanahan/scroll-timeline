@@ -1,9 +1,11 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <title>Anonymous Scroll Progress Timeline</title>
 
 <style>
   @keyframes move {
-    to { transform: translateX(350px) translateY(600px); }
+    to {
+      transform: translateX(350px) translateY(600px);
+    }
   }
 
   #box_one {
@@ -12,7 +14,8 @@
     background-color: green;
     animation: move linear both;
     animation-timeline: scroll(y nearest);
-    animation-range: 100px 500px;
+    --max: 500px;
+    animation-range: 100px var(--max);
   }
 
   .spacer {
@@ -23,7 +26,7 @@
   #container {
     width: 500px;
     height: 500px;
-    background-color:beige;
+    background-color: beige;
     overflow: auto;
   }
 
@@ -33,11 +36,10 @@
 </style>
 
 <body>
-
   <div id="container">
     <div id="box_one"></div>
     <div class="spacer"></div>
   </div>
 
-  <script src="../../dist/scroll-timeline.js"></script>
+  <script type="module" src="../../src/index.js"></script>
 </body>

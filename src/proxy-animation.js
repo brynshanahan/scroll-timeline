@@ -5,8 +5,8 @@ import {
   removeAnimation,
   fractionalOffset,
 } from "./scroll-timeline-base";
-import {splitIntoComponentValues} from './utils';
-import {simplifyCalculation} from './simplify-calculation';
+import { splitIntoComponentValues } from "./utils";
+import { simplifyCalculation } from "./simplify-calculation";
 
 const nativeDocumentGetAnimations = document.getAnimations;
 const nativeElementGetAnimations = window.Element.prototype.getAnimations;
@@ -15,7 +15,7 @@ const nativeAnimation = window.Animation;
 
 class PromiseWrapper {
   constructor() {
-    this.state = 'pending';
+    this.state = "pending";
     this.nativeResolve = this.nativeReject = null;
     this.promise = new Promise((resolve, reject) => {
       this.nativeResolve = resolve;
@@ -23,11 +23,11 @@ class PromiseWrapper {
     });
   }
   resolve(value) {
-    this.state = 'resolved';
+    this.state = "resolved";
     this.nativeResolve(value);
   }
   reject(reason) {
-    this.state = 'rejected';
+    this.state = "rejected";
     // Do not report unhandled promise rejections.
     this.promise.catch(() => {});
     this.nativeReject(reason);
@@ -40,13 +40,16 @@ function createReadyPromise(details) {
   requestAnimationFrame(() => {
     const timelineTime = details.timeline?.currentTime ?? null;
     if (timelineTime === null) {
-      return
+      return;
     }
     // Run auto align start time procedure, in case measurements are ready
     autoAlignStartTime(details);
-    if (details.pendingTask === 'play' && (details.startTime !== null || details.holdTime !== null)) {
+    if (
+      details.pendingTask === "play" &&
+      (details.startTime !== null || details.holdTime !== null)
+    ) {
       commitPendingPlay(details);
-    } else if (details.pendingTask === 'pause') {
+    } else if (details.pendingTask === "pause") {
       commitPendingPause(details);
     }
   });
@@ -61,18 +64,18 @@ function createAbortError() {
 // milliseconds. For progress-based animations, times are reported as
 // percentages.
 function toCssNumberish(details, value) {
-  if (value === null)
-    return value;
+  if (value === null) return value;
 
-  if (typeof value !== 'number') {
-      throw new DOMException(
-          `Unexpected value: ${value}.  Cannot convert to CssNumberish`,
-          "InvalidStateError");
+  if (typeof value !== "number") {
+    throw new DOMException(
+      `Unexpected value: ${value}.  Cannot convert to CssNumberish`,
+      "InvalidStateError"
+    );
   }
 
   const rangeDuration = details.rangeDuration ?? 100;
   const limit = effectEnd(details);
-  const percent = limit ?  rangeDuration * value / limit : 0;
+  const percent = limit ? (rangeDuration * value) / limit : 0;
   return CSS.percent(percent);
 }
 
@@ -83,31 +86,30 @@ function toCssNumberish(details, value) {
 function fromCssNumberish(details, value) {
   if (!details.timeline) {
     // Document timeline
-    if (value == null || typeof value === 'number')
-      return value;
+    if (value == null || typeof value === "number") return value;
 
-    const convertedTime = value.to('ms');
-    if (convertedTime)
-      return convertedTime.value;
+    const convertedTime = value.to("ms");
+    if (convertedTime) return convertedTime.value;
 
     throw new DOMException(
-        "CSSNumericValue must be either a number or a time value for " +
+      "CSSNumericValue must be either a number or a time value for " +
         "time based animations.",
-        "InvalidStateError");
+      "InvalidStateError"
+    );
   } else {
     // Scroll timeline.
-    if (value === null)
-      return value;
+    if (value === null) return value;
 
-    if (value.unit === 'percent') {
+    if (value.unit === "percent") {
       const rangeDuration = details.rangeDuration ?? 100;
       const duration = effectEnd(details);
-      return value.value * duration / rangeDuration;
+      return (value.value * duration) / rangeDuration;
     }
 
     throw new DOMException(
-        "CSSNumericValue must be a percentage for progress based animations.",
-        "NotSupportedError");
+      "CSSNumericValue must be a percentage for progress based animations.",
+      "NotSupportedError"
+    );
   }
 }
 
@@ -119,7 +121,7 @@ function normalizedTiming(details) {
   return details.normalizedTiming || timing;
 }
 
-function commitPendingPlay(details)  {
+function commitPendingPlay(details) {
   // https://drafts4.csswg.org/web-animations-2/#playing-an-animation-section
   // Refer to steps listed under "Schedule a task to run ..."
 
@@ -138,13 +140,14 @@ function commitPendingPlay(details)  {
     if (details.animation.playbackRate == 0) {
       details.startTime = timelineTime;
     } else {
-      details.startTime
-          = timelineTime -
-              details.holdTime / details.animation.playbackRate;
+      details.startTime =
+        timelineTime - details.holdTime / details.animation.playbackRate;
       details.holdTime = null;
     }
-  } else if (details.startTime !== null &&
-             details.pendingPlaybackRate !== null) {
+  } else if (
+    details.startTime !== null &&
+    details.pendingPlaybackRate !== null
+  ) {
     // B: If animation’s start time is resolved and animation has a pending
     //    playback rate,
     // B.1. Let current time to match be the result of evaluating:
@@ -159,7 +162,7 @@ function commitPendingPlay(details)  {
     //     time.
     // B.5 Set the start time of animation to new start time.
     const currentTimeToMatch =
-        (timelineTime - details.startTime) * details.animation.playbackRate;
+      (timelineTime - details.startTime) * details.animation.playbackRate;
     applyPendingPlaybackRate(details);
     const playbackRate = details.animation.playbackRate;
     if (playbackRate == 0) {
@@ -171,8 +174,8 @@ function commitPendingPlay(details)  {
   }
 
   // 8.4 Resolve animation’s current ready promise with animation.
-  if (details.readyPromise && details.readyPromise.state == 'pending')
-     details.readyPromise.resolve(details.proxy);
+  if (details.readyPromise && details.readyPromise.state == "pending")
+    details.readyPromise.resolve(details.proxy);
 
   // 8.5 Run the procedure to update an animation’s finished state for
   //     animation with the did seek flag set to false, and the
@@ -182,7 +185,7 @@ function commitPendingPlay(details)  {
   // Additional polyfill step to update the native animation's current time.
   syncCurrentTime(details);
   details.pendingTask = null;
-};
+}
 
 function commitPendingPause(details) {
   // https://www.w3.org/TR/web-animations-1/#pausing-an-animation-section
@@ -198,7 +201,7 @@ function commitPendingPause(details) {
   //    (ready time - start time) × playback rate.
   if (details.startTime != null && details.holdTime == null) {
     details.holdTime =
-        (readyTime - details.startTime) * details.animation.playbackRate;
+      (readyTime - details.startTime) * details.animation.playbackRate;
   }
 
   // 3. Apply any pending playback rate on animation.
@@ -218,14 +221,13 @@ function commitPendingPause(details) {
   // Additional polyfill step to update the native animation's current time.
   syncCurrentTime(details);
   details.pendingTask = null;
-};
+}
 
 function commitFinishedNotification(details) {
-  if (!details.finishedPromise || details.finishedPromise.state != 'pending')
+  if (!details.finishedPromise || details.finishedPromise.state != "pending")
     return;
 
-  if (details.proxy.playState != 'finished')
-    return;
+  if (details.proxy.playState != "finished") return;
 
   details.finishedPromise.resolve(details.proxy);
 
@@ -235,17 +237,21 @@ function commitFinishedNotification(details) {
   // Cannot dispatch a proxy to an event since the proxy is not a fully
   // transparent replacement. As a workaround, use a custom event and inject
   // the necessary getters.
-  const finishedEvent =
-    new CustomEvent('finish',
-                    { detail: {
-                      currentTime: details.proxy.currentTime,
-                      timelineTime: details.proxy.timeline.currentTime
-                    }});
-  Object.defineProperty(finishedEvent, 'currentTime', {
-    get: function() { return this.detail.currentTime; }
+  const finishedEvent = new CustomEvent("finish", {
+    detail: {
+      currentTime: details.proxy.currentTime,
+      timelineTime: details.proxy.timeline.currentTime,
+    },
   });
-  Object.defineProperty(finishedEvent, 'timelineTime', {
-    get: function() { return this.detail.timelineTime; }
+  Object.defineProperty(finishedEvent, "currentTime", {
+    get: function () {
+      return this.detail.currentTime;
+    },
+  });
+  Object.defineProperty(finishedEvent, "timelineTime", {
+    get: function () {
+      return this.detail.timelineTime;
+    },
   });
 
   requestAnimationFrame(() => {
@@ -256,8 +262,7 @@ function commitFinishedNotification(details) {
 }
 
 function effectivePlaybackRate(details) {
-  if (details.pendingPlaybackRate !== null)
-    return details.pendingPlaybackRate;
+  if (details.pendingPlaybackRate !== null) return details.pendingPlaybackRate;
   return details.animation.playbackRate;
 }
 
@@ -303,74 +308,75 @@ function silentlySetTheCurrentTime(details, seekTime) {
   //  5b Otherwise,
   //     Set animation’s start time to the result of evaluating timeline time - (seek time / playback rate) where
   //     timeline time is the current time value of timeline associated with animation.
-  if (details.holdTime !== null || details.startTime === null ||
-    details.timeline.phase === 'inactive' || details.animation.playbackRate === 0) {
+  if (
+    details.holdTime !== null ||
+    details.startTime === null ||
+    details.timeline.phase === "inactive" ||
+    details.animation.playbackRate === 0
+  ) {
     details.holdTime = seekTime;
   } else {
     details.startTime =
-      fromCssNumberish(details, details.timeline.currentTime) - seekTime / details.animation.playbackRate;
+      fromCssNumberish(details, details.timeline.currentTime) -
+      seekTime / details.animation.playbackRate;
   }
 
   //  6. If animation has no associated timeline or the associated timeline is inactive, make animation’s start time
   //     unresolved.
   //     This preserves the invariant that when we don’t have an active timeline it is only possible to set either the
   //     start time or the animation’s current time.
-  if (details.timeline.phase === 'inactive') {
+  if (details.timeline.phase === "inactive") {
     details.startTime = null;
   }
 
   //  7. Make animation’s previous current time unresolved.
-  details.previousCurrentTime = null
+  details.previousCurrentTime = null;
 }
 
 function calculateCurrentTime(details) {
-  if (!details.timeline)
-    return null;
+  if (!details.timeline) return null;
 
   const timelineTime = fromCssNumberish(details, details.timeline.currentTime);
-  if (timelineTime === null)
-    return null;
+  if (timelineTime === null) return null;
 
-  if (details.startTime === null)
-    return null;
+  if (details.startTime === null) return null;
 
   let currentTime =
-      (timelineTime - details.startTime) * details.animation.playbackRate;
+    (timelineTime - details.startTime) * details.animation.playbackRate;
 
   // Handle special case.
-  if (currentTime == -0)
-    currentTime = 0;
+  if (currentTime == -0) currentTime = 0;
 
   return currentTime;
 }
 
 function calculateStartTime(details, currentTime) {
-  if (!details.timeline)
-    return null;
+  if (!details.timeline) return null;
 
   const timelineTime = fromCssNumberish(details, details.timeline.currentTime);
-  if (timelineTime == null)
-    return null;
+  if (timelineTime == null) return null;
 
   return timelineTime - currentTime / details.animation.playbackRate;
 }
 
 function updateFinishedState(details, didSeek, synchronouslyNotify) {
-  if (!details.timeline)
-    return;
+  if (!details.timeline) return;
 
   // https://www.w3.org/TR/web-animations-1/#updating-the-finished-state
   // 1. Calculate the unconstrained current time. The dependency on did_seek is
   // required to accommodate timelines that may change direction. Without this
   // distinction, a once-finished animation would remain finished even when its
   // timeline progresses in the opposite direction.
-  let unconstrainedCurrentTime =
-      didSeek ? fromCssNumberish(details, details.proxy.currentTime)
-              : calculateCurrentTime(details);
+  let unconstrainedCurrentTime = didSeek
+    ? fromCssNumberish(details, details.proxy.currentTime)
+    : calculateCurrentTime(details);
 
   // 2. Conditionally update the hold time.
-  if (unconstrainedCurrentTime && details.startTime != null &&
-      !details.proxy.pending) {
+  if (
+    unconstrainedCurrentTime &&
+    details.startTime != null &&
+    !details.proxy.pending
+  ) {
     // Can seek outside the bounds of the active effect. Set the hold time to
     // the unconstrained value of the current time in the event that this update
     // is the result of explicitly setting the current time and the new time
@@ -381,14 +387,15 @@ function updateFinishedState(details, didSeek, synchronouslyNotify) {
     const playbackRate = effectivePlaybackRate(details);
     const upperBound = effectEnd(details);
     let boundary = details.previousCurrentTime;
-    if (playbackRate > 0 && unconstrainedCurrentTime >= upperBound &&
-        details.previousCurrentTime != null) {
-      if (boundary === null || boundary < upperBound)
-        boundary = upperBound;
+    if (
+      playbackRate > 0 &&
+      unconstrainedCurrentTime >= upperBound &&
+      details.previousCurrentTime != null
+    ) {
+      if (boundary === null || boundary < upperBound) boundary = upperBound;
       details.holdTime = didSeek ? unconstrainedCurrentTime : boundary;
     } else if (playbackRate < 0 && unconstrainedCurrentTime <= 0) {
-      if (boundary == null || boundary > 0)
-        boundary = 0;
+      if (boundary == null || boundary > 0) boundary = 0;
       details.holdTime = didSeek ? unconstrainedCurrentTime : boundary;
     } else if (playbackRate != 0) {
       // Update start time and reset hold time.
@@ -403,16 +410,18 @@ function updateFinishedState(details, didSeek, synchronouslyNotify) {
   syncCurrentTime(details);
 
   // 3. Set the previous current time.
-  details.previousCurrentTime = fromCssNumberish(details,
-                                                 details.proxy.currentTime);
+  details.previousCurrentTime = fromCssNumberish(
+    details,
+    details.proxy.currentTime
+  );
 
   // 4. Set the current finished state.
   const playState = details.proxy.playState;
 
-  if (playState == 'finished') {
+  if (playState == "finished") {
     if (!details.finishedPromise)
       details.finishedPromise = new PromiseWrapper();
-    if (details.finishedPromise.state == 'pending') {
+    if (details.finishedPromise.state == "pending") {
       // 5. Setup finished notification.
       if (synchronouslyNotify) {
         commitFinishedNotification(details);
@@ -425,12 +434,13 @@ function updateFinishedState(details, didSeek, synchronouslyNotify) {
   } else {
     // 6. If not finished but the current finished promise is already resolved,
     //    create a new promise.
-    if (details.finishedPromise &&
-        details.finishedPromise.state == 'resolved') {
+    if (
+      details.finishedPromise &&
+      details.finishedPromise.state == "resolved"
+    ) {
       details.finishedPromise = new PromiseWrapper();
     }
-    if (details.animation.playState != 'paused')
-      details.animation.pause();
+    if (details.animation.playState != "paused") details.animation.pause();
   }
 }
 
@@ -438,29 +448,28 @@ function effectEnd(details) {
   // https://www.w3.org/TR/web-animations-1/#end-time
   const timing = normalizedTiming(details);
   const totalDuration =
-     timing.delay + timing.endDelay + timing.iterations * timing.duration;
+    timing.delay + timing.endDelay + timing.iterations * timing.duration;
 
   return Math.max(0, totalDuration);
 }
 
 function hasActiveTimeline(details) {
-  return !details.timeline || details.timeline.phase != 'inactive';
+  return !details.timeline || details.timeline.phase != "inactive";
 }
 
 function syncCurrentTime(details) {
-  if (!details.timeline)
-    return;
+  if (!details.timeline) return;
 
   if (details.startTime !== null) {
     const timelineTime = details.timeline.currentTime;
-    if (timelineTime == null)
-      return;
+    if (timelineTime == null) return;
 
     const timelineTimeMs = fromCssNumberish(details, timelineTime);
 
-    setNativeCurrentTime(details,
-                         (timelineTimeMs - details.startTime) *
-                             details.animation.playbackRate);
+    setNativeCurrentTime(
+      details,
+      (timelineTimeMs - details.startTime) * details.animation.playbackRate
+    );
   } else if (details.holdTime !== null) {
     setNativeCurrentTime(details, details.holdTime);
   }
@@ -472,10 +481,13 @@ function setNativeCurrentTime(details, time) {
   const timeline = details.timeline;
   const playbackRate = details.animation.playbackRate;
   const atScrollTimelineBoundary =
-      timeline.currentTime &&
-      timeline.currentTime.value == (playbackRate < 0 ? 0 : 100);
-  const delta =
-      atScrollTimelineBoundary ? (playbackRate < 0 ? 0.001 : -0.001) : 0;
+    timeline.currentTime &&
+    timeline.currentTime.value == (playbackRate < 0 ? 0 : 100);
+  const delta = atScrollTimelineBoundary
+    ? playbackRate < 0
+      ? 0.001
+      : -0.001
+    : 0;
 
   details.animation.currentTime = time + delta;
 }
@@ -485,8 +497,7 @@ function resetPendingTasks(details) {
 
   // 1. If animation does not have a pending play task or a pending pause task,
   //    abort this procedure.
-  if (!details.pendingTask)
-    return;
+  if (!details.pendingTask) return;
 
   // 2. If animation has a pending play task, cancel that task.
   // 3. If animation has a pending pause task, cancel that task.
@@ -506,14 +517,13 @@ function resetPendingTasks(details) {
 }
 
 function playInternal(details, autoRewind) {
-  if (!details.timeline)
-    return;
+  if (!details.timeline) return;
 
   // https://drafts.csswg.org/web-animations/#playing-an-animation-section.
   // 1. Let aborted pause be a boolean flag that is true if animation has a
   //    pending pause task, and false otherwise.
   const abortedPause =
-     details.proxy.playState == 'paused' && details.proxy.pending;
+    details.proxy.playState == "paused" && details.proxy.pending;
 
   // 2. Let has pending ready promise be a boolean flag that is initially
   //    false.
@@ -553,8 +563,10 @@ function playInternal(details, autoRewind) {
   // 6c If animation’s effective playback rate = 0 and animation’s current time
   //    is unresolved,
   //    6c1. Set the animation’s hold time to zero.
-  let previousCurrentTime = fromCssNumberish(details,
-                                             details.proxy.currentTime);
+  let previousCurrentTime = fromCssNumberish(
+    details,
+    details.proxy.currentTime
+  );
 
   const playbackRate = effectivePlaybackRate(details);
   if (playbackRate == 0 && previousCurrentTime == null) {
@@ -575,9 +587,9 @@ function playInternal(details, autoRewind) {
   // - Playing a finished animation restarts the animation aligned at the start
   // - Playing a pause-pending but previously finished animation realigns with the scroll position
   // - Playing a finished animation clears the start time
-  if (details.proxy.playState === 'finished' || abortedPause) {
-    details.holdTime = null
-    details.startTime = null
+  if (details.proxy.playState === "finished" || abortedPause) {
+    details.holdTime = null;
+    details.startTime = null;
     details.autoAlignStartTime = true;
   }
 
@@ -604,8 +616,12 @@ function playInternal(details, autoRewind) {
   // If we return when this flag is set, a play task will not be scheduled, leaving the animation in the
   // idle state. If the animation is in the idle state, the auto align procedure will bail.
   // TODO: update with results of https://github.com/w3c/csswg-drafts/issues/9871
-  if (details.holdTime === null && !details.autoAlignStartTime &&
-      !abortedPause && details.pendingPlaybackRate === null)
+  if (
+    details.holdTime === null &&
+    !details.autoAlignStartTime &&
+    !abortedPause &&
+    details.pendingPlaybackRate === null
+  )
     return;
 
   // 11. If has pending ready promise is false, let animation’s current ready
@@ -618,15 +634,17 @@ function playInternal(details, autoRewind) {
   syncCurrentTime(details);
 
   // 12. Schedule a task to run as soon as animation is ready.
-  if (!details.readyPromise)
-    createReadyPromise(details);
-  details.pendingTask = 'play';
+  if (!details.readyPromise) createReadyPromise(details);
+  details.pendingTask = "play";
 
   // Additional step for the polyfill.
   // This must run after setting up the ready promise, otherwise we will run
   // the procedure for calculating auto aligned start time before play state is running
-  addAnimation(details.timeline, details.animation,
-               tickAnimation.bind(details.proxy));
+  addAnimation(
+    details.timeline,
+    details.animation,
+    tickAnimation.bind(details.proxy)
+  );
 
   // 13. Run the procedure to update an animation’s finished state for animation
   //     with the did seek flag set to false, and the synchronously notify flag
@@ -641,7 +659,10 @@ function tickAnimation(timelineTime) {
   if (timelineTime == null) {
     // While the timeline is inactive, it's effect should not be applied.
     // To polyfill this behavior, we cancel the underlying animation.
-    if (details.proxy.playState !== 'paused' && details.animation.playState != 'idle')
+    if (
+      details.proxy.playState !== "paused" &&
+      details.animation.playState != "idle"
+    )
       details.animation.cancel();
     return;
   }
@@ -653,22 +674,26 @@ function tickAnimation(timelineTime) {
   if (details.pendingTask) {
     // Commit pending tasks asynchronously if they are ready after aligning start time
     requestAnimationFrame(() => {
-      if (details.pendingTask === 'play' && (details.startTime !== null || details.holdTime !== null)) {
+      if (
+        details.pendingTask === "play" &&
+        (details.startTime !== null || details.holdTime !== null)
+      ) {
         commitPendingPlay(details);
-      } else if (details.pendingTask === 'pause') {
+      } else if (details.pendingTask === "pause") {
         commitPendingPause(details);
       }
     });
   }
 
   const playState = this.playState;
-  if (playState == 'running' || playState == 'finished') {
+  if (playState == "running" || playState == "finished") {
     const timelineTimeMs = fromCssNumberish(details, timelineTime);
 
     setNativeCurrentTime(
-        details,
-        (timelineTimeMs - fromCssNumberish(details, this.startTime)) *
-            this.playbackRate);
+      details,
+      (timelineTimeMs - fromCssNumberish(details, this.startTime)) *
+        this.playbackRate
+    );
 
     updateFinishedState(details, false, false);
   }
@@ -686,22 +711,21 @@ function createProxyEffect(details) {
   // Generic pass-through handler for any method or attribute that is not
   // explicitly overridden.
   const handler = {
-    get: function(obj, prop) {
+    get: function (obj, prop) {
       const result = obj[prop];
-      if (typeof result === 'function')
-        return result.bind(effect);
+      if (typeof result === "function") return result.bind(effect);
       return result;
     },
 
-    set: function(obj, prop, value) {
+    set: function (obj, prop, value) {
       obj[prop] = value;
       return true;
-    }
+    },
   };
   // Override getComputedTiming to convert to percentages when using a
   // progress-based timeline.
   const getComputedTimingHandler = {
-    apply: function(target) {
+    apply: function (target) {
       // Ensure that the native animation is using normalized values.
       effect.getTiming();
 
@@ -711,14 +735,14 @@ function createProxyEffect(details) {
         const rangeDuration = details.duration ?? 100;
         timing.localTime = toCssNumberish(details, timing.localTime);
         timing.endTime = toCssNumberish(details, timing.endTime);
-        timing.activeDuration =
-            toCssNumberish(details, timing.activeDuration);
+        timing.activeDuration = toCssNumberish(details, timing.activeDuration);
         const limit = effectEnd(details);
-        const iteration_duration = timing.iterations ?
-            (limit - timing.delay - timing.endDelay) / timing.iterations : 0;
-        timing.duration = limit ?
-            CSS.percent(rangeDuration * iteration_duration / limit) :
-            CSS.percent(0);
+        const iteration_duration = timing.iterations
+          ? (limit - timing.delay - timing.endDelay) / timing.iterations
+          : 0;
+        timing.duration = limit
+          ? CSS.percent((rangeDuration * iteration_duration) / limit)
+          : CSS.percent(0);
 
         // Correct for inactive timeline.
         if (details.timeline.currentTime === undefined) {
@@ -726,17 +750,16 @@ function createProxyEffect(details) {
         }
       }
       return timing;
-    }
+    },
   };
   // Override getTiming to normalize the timing. EffectEnd for the animation
   // align with the range duration.
   const getTimingHandler = {
-    apply: function(target, thisArg) {
+    apply: function (target, thisArg) {
       // Arbitrary conversion of 100% to ms.
       const INTERNAL_DURATION_MS = 100000;
 
-      if (details.specifiedTiming)
-        return details.specifiedTiming;
+      if (details.specifiedTiming) return details.specifiedTiming;
 
       details.specifiedTiming = target.apply(effect);
       let timing = Object.assign({}, details.specifiedTiming);
@@ -746,13 +769,18 @@ function createProxyEffect(details) {
       if (timing.duration === Infinity) {
         throw TypeError(
           "Effect duration cannot be Infinity when used with Scroll " +
-          "Timelines");
+            "Timelines"
+        );
       }
 
       // Duration 'auto' case.
-      if (timing.duration === null || timing.duration === 'auto' || details.autoDurationEffect) {
+      if (
+        timing.duration === null ||
+        timing.duration === "auto" ||
+        details.autoDurationEffect
+      ) {
         if (details.timeline) {
-          details.autoDurationEffect = true
+          details.autoDurationEffect = true;
           // TODO: start and end delay are specced as doubles and currently
           // ignored for a progress based animation. Support delay and endDelay
           // once CSSNumberish.
@@ -760,9 +788,9 @@ function createProxyEffect(details) {
           timing.endDelay = 0;
           totalDuration = timing.iterations ? INTERNAL_DURATION_MS : 0;
           timing.duration = timing.iterations
-             ? (totalDuration - timing.delay - timing.endDelay) /
-                 timing.iterations
-             : 0;
+            ? (totalDuration - timing.delay - timing.endDelay) /
+              timing.iterations
+            : 0;
           // When the rangeStart comes after the rangeEnd, we end up in a situation
           // that cannot work. We can tell this by having ended up with a negative
           // duration. In that case, we need to adjust the computed timings. We do
@@ -779,12 +807,11 @@ function createProxyEffect(details) {
       }
       details.normalizedTiming = timing;
       return details.specifiedTiming;
-    }
+    },
   };
   const updateTimingHandler = {
-    apply: function(target, thisArg, argumentsList) {
-      if (!argumentsList || !argumentsList.length)
-        return;
+    apply: function (target, thisArg, argumentsList) {
+      if (!argumentsList || !argumentsList.length) return;
 
       // Additional validation that is specific to scroll timelines.
       if (details.timeline && argumentsList[0]) {
@@ -792,18 +819,20 @@ function createProxyEffect(details) {
         const duration = options.duration;
         if (duration === Infinity) {
           throw TypeError(
-              "Effect duration cannot be Infinity when used with Scroll " +
-              "Timelines");
+            "Effect duration cannot be Infinity when used with Scroll " +
+              "Timelines"
+          );
         }
         const iterations = options.iterations;
         if (iterations === Infinity) {
           throw TypeError(
             "Effect iterations cannot be Infinity when used with Scroll " +
-            "Timelines");
+              "Timelines"
+          );
         }
 
-        if (typeof duration !== 'undefined' && duration !== 'auto') {
-          details.autoDurationEffect = null
+        if (typeof duration !== "undefined" && duration !== "auto") {
+          details.autoDurationEffect = null;
         }
       }
 
@@ -813,11 +842,13 @@ function createProxyEffect(details) {
       }
       target.apply(effect, argumentsList);
       renormalizeTiming(details);
-    }
+    },
   };
   const proxy = new Proxy(effect, handler);
-  proxy.getComputedTiming = new Proxy(effect.getComputedTiming,
-                                      getComputedTimingHandler);
+  proxy.getComputedTiming = new Proxy(
+    effect.getComputedTiming,
+    getComputedTimingHandler
+  );
   proxy.getTiming = new Proxy(effect.getTiming, getTimingHandler);
   proxy.updateTiming = new Proxy(effect.updateTiming, updateTimingHandler);
   return proxy;
@@ -826,18 +857,20 @@ function createProxyEffect(details) {
 // Computes the start delay as a fraction of the active cover range.
 function fractionalStartDelay(details) {
   if (!details.animationRange) return 0;
-  const rangeStart = details.animationRange.start === 'normal' ?
-    getNormalStartRange(details.timeline) :
-    details.animationRange.start;
+  const rangeStart =
+    details.animationRange.start === "normal"
+      ? getNormalStartRange(details.timeline)
+      : details.animationRange.start;
   return fractionalOffset(details.timeline, rangeStart);
 }
 
 // Computes the ends delay as a fraction of the active cover range.
 function fractionalEndDelay(details) {
   if (!details.animationRange) return 0;
-  const rangeEnd = details.animationRange.end === 'normal' ?
-    getNormalEndRange(details.timeline) :
-    details.animationRange.end;
+  const rangeEnd =
+    details.animationRange.end === "normal"
+      ? getNormalEndRange(details.timeline)
+      : details.animationRange.end;
   return 1 - fractionalOffset(details.timeline, rangeEnd);
 }
 
@@ -848,9 +881,13 @@ let proxyAnimations = new WeakMap();
 // Clear cache containing the ProxyAnimation instances when leaving the page.
 // See https://github.com/flackr/scroll-timeline/issues/146#issuecomment-1698159183
 // for details.
-window.addEventListener('pagehide', (e) => {
-  proxyAnimations = new WeakMap();
-}, false);
+window.addEventListener(
+  "pagehide",
+  (e) => {
+    proxyAnimations = new WeakMap();
+  },
+  false
+);
 
 // Map from the real underlying native animation to the ProxyAnimation proxy of it.
 let proxiedAnimations = new WeakMap();
@@ -878,15 +915,16 @@ function autoAlignStartTime(details) {
 
   // 3. If play state is idle, abort this procedure.
   // 4. If play state is paused, and hold time is resolved, abort this procedure.
-  if (details.proxy.playState === 'idle' ||
-    (details.proxy.playState === 'paused' && details.holdTime !== null)) {
+  if (
+    details.proxy.playState === "idle" ||
+    (details.proxy.playState === "paused" && details.holdTime !== null)
+  ) {
     return;
   }
 
   const previousRangeDuration = details.rangeDuration;
 
   let startOffset, endOffset;
-
 
   // 5. Let start offset be the resolved timeline time corresponding to the start of the animation attachment range.
   //    In the case of view timelines, it requires a calculation based on the proportion of the cover range.
@@ -897,7 +935,7 @@ function autoAlignStartTime(details) {
 
     // Range start is invalid, falling back to default value
     startOffset = CSS.percent(0);
-    details.animationRange.start = 'normal';
+    details.animationRange.start = "normal";
     console.warn("Exception when calculating start offset", e);
   }
 
@@ -910,7 +948,7 @@ function autoAlignStartTime(details) {
 
     // Range start is invalid, falling back to default value
     endOffset = CSS.percent(100);
-    details.animationRange.end = 'normal';
+    details.animationRange.end = "normal";
     console.warn("Exception when calculating end offset", e);
   }
 
@@ -919,7 +957,10 @@ function autoAlignStartTime(details) {
   details.rangeDuration = endOffset.value - startOffset.value;
   // 7. Set start time to start offset if effective playback rate ≥ 0, and end offset otherwise.
   const playbackRate = effectivePlaybackRate(details);
-  details.startTime = fromCssNumberish(details,playbackRate >= 0 ? startOffset : endOffset);
+  details.startTime = fromCssNumberish(
+    details,
+    playbackRate >= 0 ? startOffset : endOffset
+  );
 
   // 8. Clear hold time.
   details.holdTime = null;
@@ -931,12 +972,12 @@ function autoAlignStartTime(details) {
 }
 
 function unsupportedTimeline(timeline) {
-  throw new Error('Unsupported timeline class');
+  throw new Error("Unsupported timeline class");
 }
 
 function getNormalStartRange(timeline) {
   if (timeline instanceof ViewTimeline) {
-    return { rangeName: 'cover', offset: CSS.percent(0) };
+    return { rangeName: "cover", offset: CSS.percent(0) };
   }
 
   if (timeline instanceof ScrollTimeline) {
@@ -948,7 +989,7 @@ function getNormalStartRange(timeline) {
 
 function getNormalEndRange(timeline) {
   if (timeline instanceof ViewTimeline) {
-    return { rangeName: 'cover', offset: CSS.percent(100) };
+    return { rangeName: "cover", offset: CSS.percent(100) };
   }
 
   if (timeline instanceof ScrollTimeline) {
@@ -958,11 +999,13 @@ function getNormalEndRange(timeline) {
   unsupportedTimeline(timeline);
 }
 
-function parseAnimationRange(timeline, value) {
+const expressionCalls = ["var", "calc", "min", "max", "clamp", "minmax"];
+
+function parseAnimationRange(target, timeline, value) {
   if (!value)
     return {
-      start: 'normal',
-      end: 'normal',
+      start: "normal",
+      end: "normal",
     };
 
   const animationRange = {
@@ -982,7 +1025,7 @@ function parseAnimationRange(timeline, value) {
     const rangeNames = [];
     const offsets = [];
 
-    parts.forEach(part => {
+    parts.forEach((part) => {
       if (ANIMATION_RANGE_NAMES.includes(part)) {
         rangeNames.push(part);
       } else {
@@ -1000,7 +1043,8 @@ function parseAnimationRange(timeline, value) {
 
     if (rangeNames.length) {
       animationRange.start.rangeName = rangeNames[0];
-      animationRange.end.rangeName = rangeNames.length > 1 ? rangeNames[1] : rangeNames[0];
+      animationRange.end.rangeName =
+        rangeNames.length > 1 ? rangeNames[1] : rangeNames[0];
     }
 
     if (offsets.length > 1) {
@@ -1014,7 +1058,20 @@ function parseAnimationRange(timeline, value) {
   if (timeline instanceof ScrollTimeline) {
     // @TODO: Play nice with only 1 offset being set
     // @TODO: Play nice with expressions such as `calc(50% + 10px) 100%`
-    const parts = value.split(' ');
+
+    let computedValue = value;
+
+    if (expressionCalls.some((fn) => value.includes(fn))) {
+      const key = `--compute-scroll-timeline-animation-range-${Math.random()
+        .toFixed(3)
+        .slice(2, 5)}`;
+
+      target.style.setProperty(key, value);
+      computedValue = window.getComputedStyle(target).getPropertyValue(key);
+      target.style.removeProperty(key);
+    }
+
+    const parts = splitIntoComponentValues(computedValue);
     if (parts.length != 2) {
       throw TypeError("Invalid time range or unsupported time range format.");
     }
@@ -1029,12 +1086,12 @@ function parseAnimationRange(timeline, value) {
 }
 
 function parseTimelineRangePart(timeline, value, position) {
-  if (!value || value === 'normal') return 'normal';
+  if (!value || value === "normal") return "normal";
 
   if (timeline instanceof ViewTimeline) {
     // Extract parts from the passed in value.
-    let rangeName = 'cover'
-    let offset = position === 'start' ? CSS.percent(0) : CSS.percent(100)
+    let rangeName = "cover";
+    let offset = position === "start" ? CSS.percent(0) : CSS.percent(100);
 
     // Author passed in something like `{ rangeName: 'cover', offset: CSS.percent(100) }`
     if (value instanceof Object) {
@@ -1082,13 +1139,15 @@ function parseTimelineRangePart(timeline, value, position) {
 // TODO: Create a full-fledged proxy so missing methods are automatically
 // fetched from Animation.
 export class ProxyAnimation {
-  constructor(effect, timeline, animOptions={}) {
+  constructor(effect, timeline, animOptions = {}) {
     const isScrollAnimation = timeline instanceof ScrollTimeline;
     const animationTimeline = isScrollAnimation ? undefined : timeline;
     const animation =
-        (effect instanceof nativeAnimation) ?
-           effect : new nativeAnimation(effect, animationTimeline);
+      effect instanceof nativeAnimation
+        ? effect
+        : new nativeAnimation(effect, animationTimeline);
     proxiedAnimations.set(animation, this);
+    const target = effect.effect.target;
     proxyAnimations.set(this, {
       animation: animation,
       timeline: isScrollAnimation ? timeline : undefined,
@@ -1126,8 +1185,10 @@ export class ProxyAnimation {
       effect: null,
       // The animation attachment range, restricting the animation’s
       // active interval to that range of a timeline
-      animationRange: isScrollAnimation ? parseAnimationRange(timeline, animOptions['animation-range']) : null,
-      proxy: this
+      animationRange: isScrollAnimation
+        ? parseAnimationRange(target, timeline, animOptions["animation-range"])
+        : null,
+      proxy: this,
     });
   }
 
@@ -1137,13 +1198,11 @@ export class ProxyAnimation {
 
   get effect() {
     const details = proxyAnimations.get(this);
-    if (!details.timeline)
-      return details.animation.effect;
+    if (!details.timeline) return details.animation.effect;
 
     // Proxy the effect to support timing conversions for progress based
     // animations.
-    if (!details.effect)
-      details.effect = createProxyEffect(details);
+    if (!details.effect) details.effect = createProxyEffect(details);
 
     return details.effect;
   }
@@ -1169,8 +1228,7 @@ export class ProxyAnimation {
     // 2. If new timeline is the same object as old timeline, abort this
     //    procedure.
     const oldTimeline = this.timeline;
-    if (oldTimeline == newTimeline)
-      return;
+    if (oldTimeline == newTimeline) return;
 
     // 3. Let previous play state be animation’s play state.
     const previousPlayState = this.playState;
@@ -1188,7 +1246,7 @@ export class ProxyAnimation {
     let end = effectEnd(details);
     let previousProgress;
     if (previousCurrentTime === null) {
-      previousProgress = null
+      previousProgress = null;
     } else if (end === 0) {
       previousProgress = 0;
     } else {
@@ -1197,11 +1255,11 @@ export class ProxyAnimation {
 
     // 9. Let from finite timeline be true if old timeline is not null and not
     //    monotonically increasing.
-    const fromScrollTimeline = (oldTimeline instanceof ScrollTimeline);
+    const fromScrollTimeline = oldTimeline instanceof ScrollTimeline;
 
     // 10. Let to finite timeline be true if timeline is not null and not
     //    monotonically increasing.
-    const toScrollTimeline = (newTimeline instanceof ScrollTimeline);
+    const toScrollTimeline = newTimeline instanceof ScrollTimeline;
 
     // 11. Let the timeline of animation be new timeline.
     // Cannot assume that the native implementation has mutable timeline
@@ -1235,19 +1293,25 @@ export class ProxyAnimation {
       details.holdTime = null;
 
       // 5. If previous play state is "finished" or "running"
-      if (previousPlayState === 'running' || previousPlayState === 'finished') {
+      if (previousPlayState === "running" || previousPlayState === "finished") {
         //    1. Schedule a pending play task
-        if (!details.readyPromise || details.readyPromise.state === 'resolved') {
+        if (
+          !details.readyPromise ||
+          details.readyPromise.state === "resolved"
+        ) {
           createReadyPromise(details);
         }
-        details.pendingTask = 'play';
+        details.pendingTask = "play";
         // Additional polyfill step needed to associate the animation with
         // the scroll timeline.
-        addAnimation(details.timeline, details.animation,
-                     tickAnimation.bind(this));
+        addAnimation(
+          details.timeline,
+          details.animation,
+          tickAnimation.bind(this)
+        );
       }
       // 6. If previous play state is "paused" and previous progress is resolved:
-      if (previousPlayState === 'paused' && previousProgress !== null) {
+      if (previousPlayState === "paused" && previousProgress !== null) {
         //    1. Set hold time to previous progress * endTime time. This step ensures that previous progress is preserved
         //       even in the case of a pause-pending animation with a resolved start time.
         details.holdTime = previousProgress * end;
@@ -1258,14 +1322,11 @@ export class ProxyAnimation {
       // Note: if the native promise already has an associated "then", we will
       // lose this association.
       if (pending) {
-        if (!details.readyPromise ||
-            details.readyPromise.state == 'resolved') {
+        if (!details.readyPromise || details.readyPromise.state == "resolved") {
           createReadyPromise(details);
         }
-        if (previousPlayState == 'paused')
-          details.pendingTask = 'pause';
-        else
-          details.pendingTask = 'play';
+        if (previousPlayState == "paused") details.pendingTask = "pause";
+        else details.pendingTask = "play";
       }
 
       // Note that the following steps should apply when transitioning to
@@ -1276,8 +1337,7 @@ export class ProxyAnimation {
       //     time unresolved. This step ensures that the finished play state of
       //     animation is not “sticky” but is re-evaluated based on its updated
       //     current time.
-      if (details.startTime !== null)
-        details.holdTime = null;
+      if (details.startTime !== null) details.holdTime = null;
 
       // 16. Run the procedure to update an animation’s finished state for
       //     animation with the did seek flag set to false, and the
@@ -1300,12 +1360,12 @@ export class ProxyAnimation {
           details.animation.currentTime = previousProgress * effectEnd(details);
 
         switch (previousPlayState) {
-          case 'paused':
+          case "paused":
             details.animation.pause();
             break;
 
-          case 'running':
-          case 'finished':
+          case "running":
+          case "finished":
             details.animation.play();
         }
       }
@@ -1316,8 +1376,7 @@ export class ProxyAnimation {
 
   get startTime() {
     const details = proxyAnimations.get(this);
-    if (details.timeline)
-      return toCssNumberish(details, details.startTime);
+    if (details.timeline) return toCssNumberish(details, details.startTime);
 
     return details.animation.startTime;
   }
@@ -1340,8 +1399,10 @@ export class ProxyAnimation {
     //    animation is associated with. If there is no timeline associated with
     //    animation or the associated timeline is inactive, let the timeline
     //    time be unresolved.
-    const timelineTime = fromCssNumberish(details,
-                                          details.timeline.currentTime);
+    const timelineTime = fromCssNumberish(
+      details,
+      details.timeline.currentTime
+    );
 
     // 5. If timeline time is unresolved and new start time is resolved, make
     //    animation’s hold time unresolved.
@@ -1376,8 +1437,7 @@ export class ProxyAnimation {
 
     if (details.startTime !== null && details.animation.playbackRate != 0)
       details.holdTime = null;
-    else
-      details.holdTime = previousCurrentTime;
+    else details.holdTime = previousCurrentTime;
 
     // 12. If animation has a pending play task or a pending pause task, cancel
     //     that task and resolve animation’s current ready promise with
@@ -1387,10 +1447,10 @@ export class ProxyAnimation {
       details.readyPromise.resolve(this);
     }
 
-   // 13. Run the procedure to update an animation’s finished state for animation
-   //     with the did seek flag set to true, and the synchronously notify flag
-   //     set to false.
-   updateFinishedState(details, true, false);
+    // 13. Run the procedure to update an animation’s finished state for animation
+    //     with the did seek flag set to true, and the synchronously notify flag
+    //     set to false.
+    updateFinishedState(details, true, false);
 
     // Ensure that currentTime is updated for the native animation.
     syncCurrentTime(details);
@@ -1398,8 +1458,7 @@ export class ProxyAnimation {
 
   get currentTime() {
     const details = proxyAnimations.get(this);
-    if (!details.timeline)
-      return details.animation.currentTime;
+    if (!details.timeline) return details.animation.currentTime;
 
     if (details.holdTime != null)
       return toCssNumberish(details, details.holdTime);
@@ -1422,7 +1481,7 @@ export class ProxyAnimation {
     //    3. Make animation’s start time unresolved.
     //    4. Cancel the pending pause task.
     //    5. Resolve animation’s current ready promise with animation.
-    if (details.pendingTask == 'pause') {
+    if (details.pendingTask == "pause") {
       details.holdTime = fromCssNumberish(details, value);
       applyPendingPlaybackRate(details);
       details.startTime = null;
@@ -1458,14 +1517,12 @@ export class ProxyAnimation {
 
     // 4. If previous time is resolved, set the current time of animation to
     //    previous time
-   if (previousCurrentTime !== null)
-      this.currentTime = previousCurrentTime;
+    if (previousCurrentTime !== null) this.currentTime = previousCurrentTime;
   }
 
   get playState() {
     const details = proxyAnimations.get(this);
-    if (!details.timeline)
-      return details.animation.playState;
+    if (!details.timeline) return details.animation.playState;
 
     const currentTime = fromCssNumberish(details, this.currentTime);
 
@@ -1475,18 +1532,23 @@ export class ProxyAnimation {
     //    * animation does not have either a pending play task or a pending pause
     //      task,
     //    then idle.
-    if (currentTime === null && details.startTime === null &&
-        details.pendingTask == null)
-      return 'idle';
+    if (
+      currentTime === null &&
+      details.startTime === null &&
+      details.pendingTask == null
+    )
+      return "idle";
 
     // 2. Either of the following conditions are true:
     //    * animation has a pending pause task, or
     //    * both the start time of animation is unresolved and it does not have a
     //      pending play task,
     //    then paused.
-    if (details.pendingTask == 'pause' ||
-        (details.startTime === null && details.pendingTask != 'play'))
-      return 'paused';
+    if (
+      details.pendingTask == "pause" ||
+      (details.startTime === null && details.pendingTask != "play")
+    )
+      return "paused";
 
     // 3.  For animation, current time is resolved and either of the following
     //     conditions are true:
@@ -1495,30 +1557,36 @@ export class ProxyAnimation {
     //     * animation’s effective playback rate < 0 and current time <= 0,
     //    then finished.
     if (currentTime != null) {
-      if (details.animation.playbackRate > 0 &&
-          currentTime >= effectEnd(details))
-        return 'finished';
+      if (
+        details.animation.playbackRate > 0 &&
+        currentTime >= effectEnd(details)
+      )
+        return "finished";
       if (details.animation.playbackRate < 0 && currentTime <= 0)
-        return 'finished';
+        return "finished";
     }
 
     // 4.  Otherwise
-    return 'running';
+    return "running";
   }
 
   get rangeStart() {
-    return proxyAnimations.get(this).animationRange?.start ?? 'normal';
+    return proxyAnimations.get(this).animationRange?.start ?? "normal";
   }
 
   set rangeStart(value) {
     const details = proxyAnimations.get(this);
     if (!details.timeline) {
-      return details.animation.rangeStart = value;
+      return (details.animation.rangeStart = value);
     }
 
     if (details.timeline instanceof ScrollTimeline) {
       const animationRange = details.animationRange;
-      animationRange.start = parseTimelineRangePart(details.timeline, value, 'start');
+      animationRange.start = parseTimelineRangePart(
+        details.timeline,
+        value,
+        "start"
+      );
 
       // Additional polyfill step to ensure that the native animation has the
       // correct value for current time.
@@ -1528,18 +1596,22 @@ export class ProxyAnimation {
   }
 
   get rangeEnd() {
-    return proxyAnimations.get(this).animationRange?.end ?? 'normal';
+    return proxyAnimations.get(this).animationRange?.end ?? "normal";
   }
 
   set rangeEnd(value) {
     const details = proxyAnimations.get(this);
     if (!details.timeline) {
-      return details.animation.rangeEnd = value;
+      return (details.animation.rangeEnd = value);
     }
 
     if (details.timeline instanceof ScrollTimeline) {
       const animationRange = details.animationRange;
-      animationRange.end = parseTimelineRangePart(details.timeline, value, 'end');
+      animationRange.end = parseTimelineRangePart(
+        details.timeline,
+        value,
+        "end"
+      );
 
       // Additional polyfill step to ensure that the native animation has the
       // correct value for current time.
@@ -1556,8 +1628,7 @@ export class ProxyAnimation {
   get pending() {
     const details = proxyAnimations.get(this);
     if (details.timeline) {
-      return !!details.readyPromise &&
-             details.readyPromise.state == 'pending';
+      return !!details.readyPromise && details.readyPromise.state == "pending";
     }
 
     return details.animation.pending;
@@ -1577,13 +1648,15 @@ export class ProxyAnimation {
     const duration = effectEnd(details);
     if (playbackRate == 0) {
       throw new DOMException(
-          "Cannot finish Animation with a playbackRate of 0.",
-          "InvalidStateError");
+        "Cannot finish Animation with a playbackRate of 0.",
+        "InvalidStateError"
+      );
     }
     if (playbackRate > 0 && duration == Infinity) {
       throw new DOMException(
-          "Cannot finish Animation with an infinite target effect end.",
-          "InvalidStateError");
+        "Cannot finish Animation with an infinite target effect end.",
+        "InvalidStateError"
+      );
     }
 
     // 2. Apply any pending playback rate to animation.
@@ -1605,19 +1678,20 @@ export class ProxyAnimation {
     //        timeline time - (limit / playback rate)
     //    where timeline time is the current time value of the associated
     //    timeline.
-    const timelineTime = fromCssNumberish(details,
-                                          details.timeline.currentTime);
+    const timelineTime = fromCssNumberish(
+      details,
+      details.timeline.currentTime
+    );
 
     if (details.startTime === null && timelineTime !== null) {
-       details.startTime =
-           timelineTime - (limit / details.animation.playbackRate);
+      details.startTime = timelineTime - limit / details.animation.playbackRate;
     }
 
     // 6. If there is a pending pause task and start time is resolved,
     //    6.1 Let the hold time be unresolved.
     //    6.2 Cancel the pending pause task.
     //    6.3 Resolve the current ready promise of animation with animation.
-    if (details.pendingTask == 'pause' && details.startTime !== null) {
+    if (details.pendingTask == "pause" && details.startTime !== null) {
       details.holdTime = null;
       details.pendingTask = null;
       details.readyPromise.resolve(this);
@@ -1626,7 +1700,7 @@ export class ProxyAnimation {
     // 7. If there is a pending play task and start time is resolved, cancel
     //    that task and resolve the current ready promise of animation with
     //    animation.
-    if (details.pendingTask == 'play' && details.startTime !== null) {
+    if (details.pendingTask == "play" && details.startTime !== null) {
       details.pendingTask = null;
       details.readyPromise.resolve(this);
     }
@@ -1659,8 +1733,7 @@ export class ProxyAnimation {
 
     // 1. If animation has a pending pause task, abort these steps.
     // 2. If the play state of animation is paused, abort these steps.
-    if (this.playState == "paused")
-      return;
+    if (this.playState == "paused") return;
 
     // Replaced steps from https://drafts.csswg.org/web-animations-2/#pausing-an-animation-section
     //
@@ -1689,10 +1762,8 @@ export class ProxyAnimation {
     //    pending ready promise be true.
     // 9. If has pending ready promise is false, set animation’s current ready
     //    promise to a new promise in the relevant Realm of animation.
-    if (details.pendingTask == 'play')
-      details.pendingTask = null;
-    else
-      details.readyPromise = null;
+    if (details.pendingTask == "play") details.pendingTask = null;
+    else details.readyPromise = null;
 
     // 10. Schedule a task to be executed at the first possible moment where all of the following conditions are true:
     //
@@ -1700,14 +1771,17 @@ export class ProxyAnimation {
     //     effect, if any.
     //     the animation is associated with a timeline that is not inactive.
     //     the animation has a resolved hold time or start time.
-    if (!details.readyPromise)
-      createReadyPromise(details);
-    details.pendingTask ='pause';
+    if (!details.readyPromise) createReadyPromise(details);
+    details.pendingTask = "pause";
 
     // Additional step for the polyfill.
     // This must run after setting up the ready promise, otherwise we will run
     // the procedure for calculating auto aligned start time before play state is running
-    addAnimation(details.timeline, details.animation, tickAnimation.bind(details.proxy));
+    addAnimation(
+      details.timeline,
+      details.animation,
+      tickAnimation.bind(details.proxy)
+    );
   }
 
   reverse() {
@@ -1720,8 +1794,8 @@ export class ProxyAnimation {
     // where reversal is not possible. Error cases will not change the state
     // of the native animation.
     const reversable =
-       (playbackRate != 0) &&
-       (playbackRate <  0 || previousCurrentTime > 0  || !inifiniteDuration);
+      playbackRate != 0 &&
+      (playbackRate < 0 || previousCurrentTime > 0 || !inifiniteDuration);
     if (!details.timeline || !reversable) {
       if (reversable)
         details.pendingPlaybackRate = -effectivePlaybackRate(details);
@@ -1729,10 +1803,11 @@ export class ProxyAnimation {
       return;
     }
 
-    if (details.timeline.phase == 'inactive') {
+    if (details.timeline.phase == "inactive") {
       throw new DOMException(
-          "Cannot reverse an animation with no active timeline",
-          "InvalidStateError");
+        "Cannot reverse an animation with no active timeline",
+        "InvalidStateError"
+      );
     }
 
     this.updatePlaybackRate(-playbackRate);
@@ -1760,14 +1835,13 @@ export class ProxyAnimation {
     //
     // 3a If animation has a pending play task or a pending pause task,
     //    Abort these steps.
-    if (details.readyPromise && details.readyPromise.state == 'pending')
-      return;
+    if (details.readyPromise && details.readyPromise.state == "pending") return;
 
-    switch(previousPlayState) {
+    switch (previousPlayState) {
       // 3b If previous play state is idle or paused,
       //    Apply any pending playback rate on animation.
-      case 'idle':
-      case 'paused':
+      case "idle":
+      case "paused":
         applyPendingPlaybackRate(details);
         break;
 
@@ -1787,18 +1861,23 @@ export class ProxyAnimation {
       //         animation with the did seek flag set to false, and the
       //         synchronously notify flag set to false.
 
-      case 'finished':
-        const timelineTime = fromCssNumberish(details,
-                                              details.timeline.currentTime);
-        const unconstrainedCurrentTime = timelineTime !== null ?
-            (timelineTime - details.startTime) * details.animation.playbackRate
+      case "finished":
+        const timelineTime = fromCssNumberish(
+          details,
+          details.timeline.currentTime
+        );
+        const unconstrainedCurrentTime =
+          timelineTime !== null
+            ? (timelineTime - details.startTime) *
+              details.animation.playbackRate
             : null;
         if (rate == 0) {
           details.startTime = timelineTime;
         } else {
           details.startTime =
-              timelineTime != null && unconstrainedCurrentTime != null ?
-                  (timelineTime - unconstrainedCurrentTime) / rate : null;
+            timelineTime != null && unconstrainedCurrentTime != null
+              ? (timelineTime - unconstrainedCurrentTime) / rate
+              : null;
         }
         applyPendingPlaybackRate(details);
         updateFinishedState(details, false, false);
@@ -1820,7 +1899,7 @@ export class ProxyAnimation {
   get id() {
     return proxyAnimations.get(this).animation.id;
   }
-  
+
   set id(value) {
     proxyAnimations.get(this).animation.id = value;
   }
@@ -1846,10 +1925,12 @@ export class ProxyAnimation {
     //               becoming inactive. This can likely be done by associating
     //               the cancel event with the proxy and not the underlying
     //               animation.
-    if (this.playState != 'idle') {
+    if (this.playState != "idle") {
       resetPendingTasks(details);
-      if (details.finishedPromise &&
-          details.finishedPromise.state == 'pending') {
+      if (
+        details.finishedPromise &&
+        details.finishedPromise.state == "pending"
+      ) {
         details.finishedPromise.reject(createAbortError());
       }
       details.finishedPromise = new PromiseWrapper();
@@ -1886,8 +1967,7 @@ export class ProxyAnimation {
 
   get finished() {
     const details = proxyAnimations.get(this);
-    if (!details.timeline)
-       return details.animation.finished;
+    if (!details.timeline) return details.animation.finished;
 
     if (!details.finishedPromise) {
       details.finishedPromise = new PromiseWrapper();
@@ -1897,8 +1977,7 @@ export class ProxyAnimation {
 
   get ready() {
     const details = proxyAnimations.get(this);
-    if (!details.timeline)
-      return details.animation.ready;
+    if (!details.timeline) return details.animation.ready;
 
     if (!details.readyPromise) {
       details.readyPromise = new PromiseWrapper();
@@ -1912,25 +1991,26 @@ export class ProxyAnimation {
   // --------------------------------------------------
 
   addEventListener(type, callback, options) {
-    proxyAnimations.get(this).animation.addEventListener(type, callback,
-                                                         options);
+    proxyAnimations
+      .get(this)
+      .animation.addEventListener(type, callback, options);
   }
 
   removeEventListener(type, callback, options) {
-    proxyAnimations.get(this).animation.removeEventListener(type, callback,
-                                                            options);
+    proxyAnimations
+      .get(this)
+      .animation.removeEventListener(type, callback, options);
   }
 
   dispatchEvent(event) {
     proxyAnimations.get(this).animation.dispatchEvent(event);
   }
-};
+}
 
 export function animate(keyframes, options) {
   const timeline = options.timeline;
 
-  if (timeline instanceof ScrollTimeline)
-    delete options.timeline;
+  if (timeline instanceof ScrollTimeline) delete options.timeline;
 
   const animation = nativeElementAnimate.apply(this, [keyframes, options]);
   const proxyAnimation = new ProxyAnimation(animation, timeline);
@@ -1940,8 +2020,8 @@ export function animate(keyframes, options) {
 
     const details = proxyAnimations.get(proxyAnimation);
     details.animationRange = {
-      start: parseTimelineRangePart(timeline, options.rangeStart, 'start'),
-      end: parseTimelineRangePart(timeline, options.rangeEnd, 'end'),
+      start: parseTimelineRangePart(timeline, options.rangeStart, "start"),
+      end: parseTimelineRangePart(timeline, options.rangeEnd, "end"),
     };
 
     proxyAnimation.play();
@@ -1959,6 +2039,9 @@ function replaceProxiedAnimations(animationsList) {
   }
   return animationsList;
 }
+
+// regex to split on spaces not inside parentheses
+const splitRegex = /\s+(?![^()]*\))/;
 
 export function elementGetAnimations(options) {
   let animations = nativeElementGetAnimations.apply(this, [options]);

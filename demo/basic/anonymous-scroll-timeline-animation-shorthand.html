@@ -1,41 +1,48 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <title>Anonymous Scroll Progress Timeline</title>
 
 <style>
   @keyframes move {
-    to { transform: translateX(350px) translateY(2000px); }
+    to {
+      transform: translateX(350px) translateY(2000px);
+    }
   }
 
   @keyframes colorChange {
-    from { background: red; }
-    to { background: blue; }
+    from {
+      background: red;
+    }
+    to {
+      background: blue;
+    }
   }
 
   @keyframes widthChange {
-    from { width: 100px; }
-    to { width: 120px; }
+    from {
+      width: 100px;
+    }
+    to {
+      width: 120px;
+    }
   }
 
-@keyframes outlineChange {
-  from { outline: 0px solid lime; }
-  to { outline: 10px solid lime; }
-}
+  @keyframes outlineChange {
+    from {
+      outline: 0px solid lime;
+    }
+    to {
+      outline: 10px solid lime;
+    }
+  }
 
   #box_one {
     width: 100px;
     height: 100px;
     background-color: green;
     overflow-y: scroll;
-    animation:
-      linear colorChange both,
-      linear widthChange both,
-      move linear,
+    animation: linear colorChange both, linear widthChange both, move linear,
       linear outlineChange both;
-    animation-timeline:
-      scroll(root),
-      auto,
-      scroll(nearest y),
-      scroll(self y);
+    animation-timeline: scroll(root), auto, scroll(nearest y), scroll(self y);
   }
 
   .content {
@@ -50,7 +57,7 @@
   #container {
     width: 500px;
     height: 500px;
-    background-color:beige;
+    background-color: beige;
     overflow: auto;
   }
 
@@ -60,7 +67,6 @@
 </style>
 
 <body>
-
   <div id="container">
     <div id="box_one">
       <div class="content"></div>
@@ -68,5 +74,5 @@
     <div class="spacer"></div>
   </div>
 
-  <script src="../../dist/scroll-timeline.js"></script>
+  <script type="module" src="../../src/index.js"></script>
 </body>
